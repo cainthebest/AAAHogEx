@@ -2,8 +2,7 @@
  * An AyStar implementation.
  *  It solves graphs by finding the fastest route from one point to the other.
  */
-class AyStar
-{
+class AyStar {
 	_pf_instance = null;
 	_cost_callback = null;
 	_estimate_callback = null;
@@ -38,13 +37,12 @@ class AyStar
 	 *  new_direction and check_direction_callback_param. It should check
 	 *  if both directions can go together on a single tile.
 	 */
-	constructor(pf_instance, cost_callback, estimate_callback, neighbours_callback, check_direction_callback)
-	{
-		if (typeof(pf_instance) != "instance") throw("'pf_instance' has to be an instance.");
-		if (typeof(cost_callback) != "function") throw("'cost_callback' has to be a function-pointer.");
-		if (typeof(estimate_callback) != "function") throw("'estimate_callback' has to be a function-pointer.");
-		if (typeof(neighbours_callback) != "function") throw("'neighbours_callback' has to be a function-pointer.");
-		if (typeof(check_direction_callback) != "function") throw("'check_direction_callback' has to be a function-pointer.");
+	constructor(pf_instance, cost_callback, estimate_callback, neighbours_callback, check_direction_callback) {
+		if (typeof(pf_instance) != "instance") throw ("'pf_instance' has to be an instance.");
+		if (typeof(cost_callback) != "function") throw ("'cost_callback' has to be a function-pointer.");
+		if (typeof(estimate_callback) != "function") throw ("'estimate_callback' has to be a function-pointer.");
+		if (typeof(neighbours_callback) != "function") throw ("'neighbours_callback' has to be a function-pointer.");
+		if (typeof(check_direction_callback) != "function") throw ("'check_direction_callback' has to be a function-pointer.");
 
 		this._pf_instance = pf_instance;
 		this._cost_callback = cost_callback;
@@ -74,21 +72,20 @@ class AyStar
 	function FindPath(iterations);
 };
 
-function AyStar::InitializePath(sources, goals, ignored_tiles = [])
-{
-	if (typeof(sources) != "array" || sources.len() == 0) throw("sources has be a non-empty array.");
-	if (typeof(goals) != "array" || goals.len() == 0) throw("goals has be a non-empty array.");
+function AyStar::InitializePath(sources, goals, ignored_tiles = []) {
+	if (typeof(sources) != "array" || sources.len() == 0) throw ("sources has be a non-empty array.");
+	if (typeof(goals) != "array" || goals.len() == 0) throw ("goals has be a non-empty array.");
 
 	this._open = AIPriorityQueue(); //AyStar.Open();
 	this._closed = AIList();
 
-	foreach (node in sources) {
+	foreach(node in sources) {
 		if (typeof(node) == "array") {
-			if (node[1] <= 0) throw("directional value should never be zero or negative.");
+			if (node[1] <= 0) throw ("directional value should never be zero or negative.");
 
 			local new_path = this.Path(null, node[0], node[1], null, this._cost_callback, this._pf_instance);
 			this._open.Insert(new_path, new_path.GetCost() + this._estimate_callback(this._pf_instance, node[0], node[1], goals));
-			
+
 		} else {
 			local cost = node.GetCost() + this._estimate_callback(this._pf_instance, node._tile, node._prev._tile, goals);
 			//HgLog.Info("InitializePath cost:"+cost+" "+HgTile(node._tile)+(node._prev != null ? " "+HgTile(node._prev._tile) : ""));
@@ -96,21 +93,20 @@ function AyStar::InitializePath(sources, goals, ignored_tiles = [])
 		}
 	}
 
-/*
-	foreach(goal in goals) {
-		HgLog.Info("InitializePath goal:"+HgTile(goal[0])+" "+HgTile(goal[1])+(goal.len()>=3 ? " "+goal[2] : ""));
-	}*/
+	/*
+		foreach(goal in goals) {
+			HgLog.Info("InitializePath goal:"+HgTile(goal[0])+" "+HgTile(goal[1])+(goal.len()>=3 ? " "+goal[2] : ""));
+		}*/
 
 	this._goals = goals;
 
-	foreach (tile in ignored_tiles) {
+	foreach(tile in ignored_tiles) {
 		this._closed.AddItem(tile, ~0);
 	}
 }
 
-function AyStar::FindPath(iterations)
-{
-	if (this._open == null) throw("can't execute over an uninitialized path");
+function AyStar::FindPath(iterations) {
+	if (this._open == null) throw ("can't execute over an uninitialized path");
 
 	while (this._open.Count() > 0 && (iterations == -1 || iterations-- > 0)) {
 		/* Get the path with the best score so far */
@@ -128,8 +124,8 @@ function AyStar::FindPath(iterations)
 			/* Scan the path for a possible collision */
 			local scan_path = path.GetParent();
 			local collided = scan_path.Contains(cur_tile);
-			
-			if(collided) {
+
+			if (collided) {
 				continue;
 			}
 
@@ -140,11 +136,11 @@ function AyStar::FindPath(iterations)
 			this._closed.AddItem(cur_tile, path.GetDirection());
 		}
 		/* Check if we found the end */
-		foreach (goal in this._goals) {
+		foreach(goal in this._goals) {
 			if (typeof(goal) == "array") {
 				if (cur_tile == goal[0]) {
 					local neighbours = this._neighbours_callback(this._pf_instance, path, cur_tile);
-					foreach (node in neighbours) {
+					foreach(node in neighbours) {
 						/*if(debug) {
 							HgLog.Info("goal[0]:"+HgTile(cur_tile)+" "+HgTile(node[0])+" par:"+HgTile(path.GetParent().GetTile())+" cost:"+path.GetCost());
 						}*/
@@ -162,22 +158,22 @@ function AyStar::FindPath(iterations)
 				}
 			}
 		}
-		
+
 		/* Scan all neighbours */
 		local neighbours = this._neighbours_callback(this._pf_instance, path, cur_tile);
 		/*if(neighbours.len()==0) {
 			HgLog.Info("neighbours.len()==0 "+HgTile(cur_tile)+(path.GetParent()!=null ? " par:"+HgTile(path.GetParent().GetTile()) : ""));
 		}*/
-		foreach (node in neighbours) {
+		foreach(node in neighbours) {
 			// node[0]:next_tile node[1]:direction node[2]:mode
-			if (node[1] <= 0) throw("directional value should never be zero or negative.");
+			if (node[1] <= 0) throw ("directional value should never be zero or negative.");
 			if ((this._closed.GetValue(node[0]) & node[1]) != 0) {
 				continue;
 			}
 			/* Calculate the new paths and add them to the open list */
 			local mode = node.len() >= 3 ? node[2] : null;
 			local new_path = this.Path(path, node[0], node[1], mode, this._cost_callback, this._pf_instance);
-			
+
 			/*if(debug) {
 				local cost = new_path.GetCost();
 				local estimate = this._estimate_callback(this._pf_instance, node[0], node[1], this._goals);
@@ -185,15 +181,15 @@ function AyStar::FindPath(iterations)
 					+" par:"+HgTile(path.GetTile())+(path.GetParent()!=null ? " parpar:"+HgTile(path.GetParent().GetTile()) : ""));
 				this._open.Insert(new_path, cost + estimate);
 			} else {*/
-				local cost = new_path.GetCost() + this._estimate_callback(this._pf_instance, node[0], node[1], this._goals);
-				this._open.Insert(new_path, cost);
+			local cost = new_path.GetCost() + this._estimate_callback(this._pf_instance, node[0], node[1], this._goals);
+			this._open.Insert(new_path, cost);
 			//}
 
 			/*if(debug) {
 				local execMode = AIExecMode();
 				AISign.BuildSign(node[0], cost.tostring());
 			}*/
-			
+
 		}
 	}
 
@@ -203,8 +199,7 @@ function AyStar::FindPath(iterations)
 }
 
 
-function AyStar::_CleanPath()
-{
+function AyStar::_CleanPath() {
 	this._closed = null;
 	this._open = null;
 	this._goals = null;
@@ -216,8 +211,7 @@ function AyStar::_CleanPath()
  *  than his GetParent(). You can walk this list to find the whole path.
  *  The last entry has a GetParent() of null.
  */
-class AyStar.Path
-{
+class AyStar.Path {
 	_prev = null;
 	_tile = null;
 	_direction = null;
@@ -242,44 +236,54 @@ class AyStar.Path
 	/**
 	 * Return the tile where this (partial-)path ends.
 	 */
-	function GetTile() { return this._tile; }
+	function GetTile() {
+		return this._tile;
+	}
 
 	/**
 	 * Return the direction from which we entered the tile in this (partial-)path.
 	 */
-	function GetDirection() { return this._direction; }
+	function GetDirection() {
+		return this._direction;
+	}
 
 	/**
 	 * Return an instance of this class leading to the previous node.
 	 */
-	function GetParent() { return this._prev; }
+	function GetParent() {
+		return this._prev;
+	}
 
 	/**
 	 * Return the cost of this (partial-)path from the beginning up to this node.
 	 */
-	function GetCost() { return this._cost; }
+	function GetCost() {
+		return this._cost;
+	}
 
 	/**
 	 * Return the length (in tiles) of this path.
 	 */
-	function GetLength() { return this._length; }
-	
+	function GetLength() {
+		return this._length;
+	}
+
 	function Contains(tile) {
-		if(tile == this._tile) {
+		if (tile == this._tile) {
 			return true;
 		} else {
 			return GetParentTable().rawin(tile);
 		}
 	}
-	
+
 	function GetParentTable() {
-		if(_table == null) {
-			if(_prev != null) {
+		if (_table == null) {
+			if (_prev != null) {
 				_table = clone _prev.GetParentTable();
 			} else {
 				_table = {};
 			}
-			_table.rawset(_tile,0);
+			_table.rawset(_tile, 0);
 		}
 		return _table;
 	}
@@ -291,30 +295,30 @@ class AyStar.Open {
 
 	constructor() {
 		this.list = AIList();
-		list.Sort( AIList.SORT_BY_VALUE, true );
+		list.Sort(AIList.SORT_BY_VALUE, true);
 		this.paths = [];
 	}
-	
+
 	function Insert(path, cost) {
 		local index = paths.len();
 		paths.push(path);
 		list.AddItem(index, cost);
 	}
-	
+
 	function Pop() {
 		local result = paths[list.Begin()];
 		list.RemoveTop(1);
 		return result;
 	}
-	
+
 	function Peek() {
 		return paths[list.Begin()];
 	}
-	
+
 	function Count() {
 		return list.Count();
 	}
-	
+
 }
 /*
 class AyStar.Open {
@@ -331,7 +335,7 @@ class AyStar.Open {
 		this.costsTable = {};
 		this.costsCount = 0;
 	}
-	
+
 	function Insert(path, cost) {
 		if((graveyard.len() == 0 && costsCount == 0) || (queue.len() >= 1 && cost < queue[0][1])) {
 			for(local i=queue.len()-1; i>=0 ;i--) {
@@ -350,19 +354,19 @@ class AyStar.Open {
 				queue.insert(0,[path, cost]);
 				return;
 			}
-			
+
 		}
 		//HgLog.Info("graveyard len:"+graveyard.len()+" cost:"+cost);
 		graveyard.push([path,cost]);
 	}
-	
+
 	function Pop() {
 		if(queue.len() == 0) {
 			Cleanup();
 		}
 		return queue.pop()[0];
 	}
-	
+
 	function Cleanup() {
 		//HgLog.Info("Cleanup start "+graveyard.len()+" "+sorted.Count()+" "+queue.len());
 		foreach(n in graveyard) {
@@ -393,14 +397,14 @@ class AyStar.Open {
 		}
 		graveyard.clear();
 	}
-	
+
 	function Peek() {
 		if(queue.len() == 0) {
 			Cleanup();
 		}
 		return queue[queue.len()-1][0];
 	}
-	
+
 	function Count() {
 		return queue.len() + graveyard.len() + costsCount;
 	}
